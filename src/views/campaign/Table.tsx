@@ -55,6 +55,7 @@ declare module '@tanstack/table-core' {
     navigateAdgroupSettingPage?: (row: TData) => void
     toggleHolidaySuspension?: (row: TData, value: 'ON' | 'OFF') => void
     openInspectionConditionDialog?: (row: TData) => void
+    hasAccount?: boolean
   }
 }
 

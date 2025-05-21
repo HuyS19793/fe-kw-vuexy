@@ -5,9 +5,16 @@ import { Chip } from '@mui/material'
 import type { CampaignSettingTableCellProps } from '@/types/campaignType'
 import CustomIconButton from '@/@core/components/mui/IconButton'
 
-const SettingButton = ({ onClick }: { onClick: () => void }) => {
+const SettingButton = ({ onClick, disabled = false }: { onClick: () => void; disabled?: boolean }) => {
   return (
-    <CustomIconButton size='small' aria-label='setting keyword' color='primary' variant='contained' onClick={onClick}>
+    <CustomIconButton
+      size='small'
+      aria-label='setting keyword'
+      color='primary'
+      variant='contained'
+      onClick={onClick}
+      disabled={disabled}
+    >
       <i className='tabler-settings' />
     </CustomIconButton>
   )
@@ -26,8 +33,11 @@ const KeywordSettingStatusCell = (info: CampaignSettingTableCellProps) => {
 
   const isComplete = current === total && total !== 0
 
+  // Check if we have an account selected before allowing navigation
+  const hasAccount = meta?.hasAccount === true
+
   const handleClick = () => {
-    if (meta?.navigateAdgroupSettingPage) {
+    if (meta?.navigateAdgroupSettingPage && hasAccount) {
       meta.navigateAdgroupSettingPage(row)
     }
   }
@@ -42,7 +52,7 @@ const KeywordSettingStatusCell = (info: CampaignSettingTableCellProps) => {
           color={isComplete ? 'success' : 'default'}
         />
         <div>
-          <SettingButton onClick={handleClick} />
+          <SettingButton onClick={handleClick} disabled={!hasAccount} />
         </div>
       </div>
     </div>

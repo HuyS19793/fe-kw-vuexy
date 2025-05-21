@@ -58,6 +58,13 @@ export function createCampaignTableMeta({
      * Navigates to the adgroup setting page for a campaign
      */
     navigateAdgroupSettingPage: (row: CampaignSettingType) => {
+      // Check if accountId is available before navigating
+      if (!accountId) {
+        console.error('Account ID is missing for navigation to adgroup setting page')
+
+        return
+      }
+
       router.push(`/${locale}/adgroup/${accountId}/${row.id}`)
     },
 
@@ -89,6 +96,11 @@ export function createCampaignTableMeta({
     openInspectionConditionDialog: (row: CampaignSettingType) => {
       setRowSelected(row)
       toggleDialog(DIALOG.INSPECTION_CONDITION)
-    }
+    },
+
+    /**
+     * Flag indicating if account is selected (to control UI elements)
+     */
+    hasAccount: !!accountId
   }
 }
