@@ -1,0 +1,36 @@
+const inspectionConditionData = {
+  CPA: {
+    MOBILE_CONVERSION_ADD_TO_CARTS: 'カートに追加',
+    MOBILE_CONVERSION_ADD_TO_WISHLISTS: 'ウィッシュリストに追加',
+    MOBILE_CONVERSION_PAYMENT_INFO_ADDITIONS: '支払い情報追加',
+    MOBILE_CONVERSION_CHECKOUTS_INITIATED: 'チェックアウト開始',
+    MOBILE_CONVERSION_CONTENT_VIEWS: 'コンテンツ表示',
+    MOBILE_CONVERSION_SITE_VISITS: 'ページビュー(アプリ)',
+    CONVERSION_SITE_VISITS: 'ページビュー(Web)',
+    AUTO_CREATED_CONVERSION_LANDING_PAGE_VIEW: 'ランディングページビュー',
+    MOBILE_CONVERSION_ACHIEVEMENTS_UNLOCKED: 'アチーブメントのロック解除',
+    MOBILE_CONVERSION_INVITES: '招待',
+    MOBILE_CONVERSION_LEVELS_ACHIEVED: 'レベル達成',
+    MOBILE_CONVERSION_LOGINS: 'ログイン',
+    MOBILE_CONVERSION_RATES: '評価',
+    MOBILE_CONVERSION_SPENT_CREDITS: 'クレジットご利用金額',
+    MOBILE_CONVERSION_TUTORIALS_COMPLETED: 'チュートリアル完了',
+    MOBILE_CONVERSION_UPDATES: '更新',
+    CONVERSION_DOWNLOADS: 'ダウンロード(Web)',
+    MOBILE_CONVERSION_DOWNLOADS: 'ダウンロード(アプリ)',
+    CONVERSION_SIGN_UPS: 'リード(アプリ)',
+    MOBILE_CONVERSION_SIGN_UPS: 'リード(Web)',
+    MOBILE_CONVERSION_PURCHASES: '購入(アプリ)',
+    CONVERSION_PURCHASES: '購入(Web)',
+    MOBILE_CONVERSION_SEARCHES: '検索'
+  },
+  CPC: {
+    APP_CLICKS: 'クリック(アプリ)',
+    URL_CLICKS: 'クリック(web)'
+  },
+  CPM: {
+    IMPRESSIONS: 'インプレッション'
+  }
+}
+
+export default inspectionConditionData
