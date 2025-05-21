@@ -133,5 +133,19 @@
   "invalidHolidayExecution": "Holiday execution must be ON or OFF",
   "invalidSubmitFlag": "Submit flag must be ON or OFF",
   "invalidGenreValue": "Invalid genre value",
-  "unexpectedUploadError": "An unexpected error occurred during upload."
+  "unexpectedUploadError": "An unexpected error occurred during upload.",
+  "Remove": "Remove",
+  "clickToReplaceFile": "Click to replace file",
+  "filePreview": "File Preview",
+  "totalRows": "Total rows: {count}",
+  "showingFirstXRows": "Showing first {count} of {total} rows",
+  "fileParseError": "Error parsing file. Please check the file format.",
+  "someFieldsAreMissing": "Some required fields are missing or invalid",
+  "errorCount": "{count} errors",
+  "rowColumnErrors": "Data errors",
+  "downloadingTemplate": "Downloading template...",
+  "downloadFailed": "Download failed. Please try again.",
+  "Upload": "Upload",
+  "Uploading": "Uploading",
+  "Cancel": "Cancel"
 }

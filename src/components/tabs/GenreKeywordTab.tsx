@@ -1,10 +1,11 @@
 // components/tabs/GenreKeywordTab.tsx
 import React, { useState } from 'react'
 
-import { Typography, Button, Box, Alert, Paper } from '@mui/material'
+import { Typography, Button, Box, Alert, Paper, Divider } from '@mui/material'
 import { useTranslations } from 'next-intl'
 
 import FileUploader from '../FileUploader'
+import FilePreview from '../FilePreview'
 import ValidationErrors from '../ValidationErrors'
 import type { UploadStatus, ValidationError, UploadTabType } from '@/types/bulkUpload'
 
@@ -23,6 +24,8 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({ accountId, accountNam
     success: false
   })
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+
   const handleDownloadTemplate = async (): Promise<void> => {
     try {
       // API call to download template will be implemented later
@@ -39,7 +42,7 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({ accountId, accountNam
       const a = document.createElement('a')
 
       a.href = url
-      a.download = `gerne_keyword_setting_template_${accountName}_${accountId}.xlsx`
+      a.download = `genre_keyword_setting_template_${accountName}_${accountId}.xlsx`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -144,6 +147,8 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({ accountId, accountNam
             {t('uploadDescription')}
           </Typography>
 
+          <Divider className='my-2' />
+
           <FileUploader
             onFileUpload={handleFileUpload}
             loading={uploadStatus.loading}
@@ -152,7 +157,11 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({ accountId, accountNam
               'application/vnd.ms-excel': ['.xls'],
               'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
             }}
+            onFileSelected={setSelectedFile}
           />
+
+          {/* File Preview Component */}
+          <FilePreview file={selectedFile} templateType='genre-keyword' previewRowCount={5} />
 
           {uploadStatus.success && (
             <Alert severity='success' className='mt-3'>

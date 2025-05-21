@@ -1,7 +1,7 @@
 // components/FileUploader.tsx
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 
-import { Box, Typography, Button, CircularProgress, Alert, Paper } from '@mui/material'
+import { Box, Typography, Button, CircularProgress, Alert, Paper, Fade } from '@mui/material'
 import type { DropzoneOptions, FileRejection, Accept } from 'react-dropzone'
 import { useDropzone } from 'react-dropzone'
 import { useTranslations } from 'next-intl'
@@ -14,12 +14,15 @@ interface FileUploaderProps {
   error?: ValidationError[] | null
   accept?: Accept
   maxSize?: number
+  onFileSelected?: (file: File | null) => void
+  hideUploadButton?: boolean
 }
 
 interface FileInfo {
   file: File
   name: string
   size: number
+  preview?: string
 }
 
 const FileUploader: React.FC<FileUploaderProps> = ({
@@ -31,11 +34,22 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     'application/vnd.ms-excel': ['.xls'],
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
   },
-  maxSize = 5 * 1024 * 1024 // 5MB
+  maxSize = 5 * 1024 * 1024, // 5MB
+  onFileSelected,
+  hideUploadButton = false
 }) => {
   const t = useTranslations()
   const [file, setFile] = useState<FileInfo | null>(null)
   const [dropzoneError, setDropzoneError] = useState<string | null>(null)
+
+  // Clean up the preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (file?.preview) {
+        URL.revokeObjectURL(file.preview)
+      }
+    }
+  }, [file])
 
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
@@ -57,15 +71,24 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       if (acceptedFiles && acceptedFiles.length > 0) {
         const selectedFile = acceptedFiles[0]
+        const preview = URL.createObjectURL(selectedFile)
 
-        setFile({
+        const fileInfo = {
           file: selectedFile,
           name: selectedFile.name,
-          size: selectedFile.size
-        })
+          size: selectedFile.size,
+          preview
+        }
+
+        setFile(fileInfo)
+
+        // Notify parent component about selected file
+        if (onFileSelected) {
+          onFileSelected(selectedFile)
+        }
       }
     },
-    [t]
+    [t, onFileSelected]
   )
 
   const dropzoneOptions: DropzoneOptions = {
@@ -86,8 +109,36 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   const handleRemove = (e: React.MouseEvent<HTMLButtonElement>): void => {
     e.stopPropagation()
+
+    if (file?.preview) {
+      URL.revokeObjectURL(file.preview)
+    }
+
     setFile(null)
     setDropzoneError(null)
+
+    // Notify parent component about file removal
+    if (onFileSelected) {
+      onFileSelected(null)
+    }
+  }
+
+  // Format file size nicely
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' bytes'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB'
+
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+  }
+
+  // Determine file icon based on extension
+  const getFileIcon = (fileName: string): string => {
+    const extension = fileName.split('.').pop()?.toLowerCase() || ''
+
+    if (['csv'].includes(extension)) return 'tabler-file-spreadsheet'
+    if (['xls', 'xlsx'].includes(extension)) return 'tabler-file-spreadsheet'
+
+    return 'tabler-file'
   }
 
   return (
@@ -100,31 +151,53 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       <Paper
         {...getRootProps()}
-        className={`p-6 border-2 border-dashed rounded-md cursor-pointer flex flex-col items-center justify-center min-h-[150px] ${
-          isDragActive ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-300'
+        elevation={0}
+        className={`p-6 border-2 border-dashed rounded-md cursor-pointer flex flex-col items-center justify-center min-h-[150px] transition-all duration-200 ${
+          isDragActive
+            ? 'border-primary-500 bg-primary-50 shadow-md'
+            : file
+              ? 'border-green-300 bg-green-50/30'
+              : 'border-gray-300 hover:border-primary-300'
         }`}
       >
         <input {...getInputProps()} />
 
         {file ? (
-          <Box className='flex flex-col items-center space-y-2'>
-            <Box className='flex items-center'>
-              <i className='tabler-file text-3xl text-primary-500 mr-2' />
-              <Typography variant='body1' className='font-medium'>
-                {file.name}
+          <Fade in={!!file}>
+            <Box className='flex flex-col items-center space-y-3 w-full'>
+              <Box className='flex items-center w-full justify-between border-b pb-2'>
+                <div className='flex items-center'>
+                  <i className={`${getFileIcon(file.name)} text-3xl text-primary-500 mr-2`} />
+                  <div>
+                    <Typography variant='body1' className='font-medium text-primary-700'>
+                      {file.name}
+                    </Typography>
+                    <Typography variant='caption' color='textSecondary'>
+                      {formatFileSize(file.size)}
+                    </Typography>
+                  </div>
+                </div>
+                <Button
+                  variant='text'
+                  color='error'
+                  size='small'
+                  className='ml-2'
+                  onClick={handleRemove}
+                  startIcon={<i className='tabler-trash' />}
+                >
+                  {t('Remove')}
+                </Button>
+              </Box>
+
+              <Typography variant='body2' className='text-center text-gray-500 italic'>
+                {t('clickToReplaceFile')}
               </Typography>
-              <Button variant='text' color='error' size='small' className='ml-2' onClick={handleRemove}>
-                <i className='tabler-x' />
-              </Button>
             </Box>
-            <Typography variant='body2' color='textSecondary'>
-              {(file.size / 1024).toFixed(2)} KB
-            </Typography>
-          </Box>
+          </Fade>
         ) : (
-          <Box className='flex flex-col items-center text-center'>
+          <Box className='flex flex-col items-center text-center transition-opacity duration-200'>
             <i className='tabler-upload text-3xl text-gray-400 mb-2' />
-            <Typography variant='body1' className='mb-1'>
+            <Typography variant='body1' className='mb-1 font-medium'>
               {isDragActive ? t('dropFileHere') : t('dragDropFile')}
             </Typography>
             <Typography variant='body2' color='textSecondary'>
@@ -137,24 +210,26 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         )}
       </Paper>
 
-      <Box className='flex justify-end'>
-        <Button
-          variant='contained'
-          color='primary'
-          onClick={handleUpload}
-          disabled={!file || loading}
-          className='min-w-[120px]'
-        >
-          {loading ? (
-            <CircularProgress size={24} color='inherit' />
-          ) : (
-            <>
-              <i className='tabler-upload mr-2' />
-              {t('uploadButton')}
-            </>
-          )}
-        </Button>
-      </Box>
+      {!hideUploadButton && (
+        <Box className='flex justify-end'>
+          <Button
+            variant='contained'
+            color='primary'
+            onClick={handleUpload}
+            disabled={!file || loading}
+            className='min-w-[120px]'
+          >
+            {loading ? (
+              <CircularProgress size={24} color='inherit' />
+            ) : (
+              <>
+                <i className='tabler-upload mr-2' />
+                {t('uploadButton')}
+              </>
+            )}
+          </Button>
+        </Box>
+      )}
     </Box>
   )
 }

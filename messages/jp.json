@@ -135,5 +135,19 @@
   "invalidHolidayExecution": "休日実行はONまたはOFFである必要があります。",
   "invalidSubmitFlag": "入稿フラグはONまたはOFFである必要があります。",
   "invalidGenreValue": "ジャンルの値が無効です。",
-  "unexpectedUploadError": "アップロード中に予期しないエラーが発生しました。"
+  "unexpectedUploadError": "アップロード中に予期しないエラーが発生しました。",
+  "Remove": "削除",
+  "clickToReplaceFile": "クリックしてファイルを置き換え",
+  "filePreview": "ファイルプレビュー",
+  "totalRows": "合計行数: {count}",
+  "showingFirstXRows": "{total}行中の最初の{count}行を表示",
+  "fileParseError": "ファイル解析エラー。ファイル形式を確認してください。",
+  "someFieldsAreMissing": "一部の必須フィールドが不足しているか無効です",
+  "errorCount": "{count}件のエラー",
+  "rowColumnErrors": "データエラー",
+  "downloadingTemplate": "テンプレートをダウンロード中...",
+  "downloadFailed": "ダウンロードに失敗しました。もう一度お試しください。",
+  "Upload": "アップロード",
+  "Uploading": "アップロード中",
+  "Cancel": "キャンセル"
 }
