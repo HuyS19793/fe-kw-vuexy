@@ -17,6 +17,44 @@ const VALID_INSPECTION_CONDITIONS = ['CPA', 'CPC', 'CPM']
 // Valid flag values
 const VALID_FLAGS = ['ON', 'OFF']
 
+// Required headers for KW Filtering
+const REQUIRED_KW_FILTERING_HEADERS = [
+  'アカウントID',
+  'アカウント名',
+  'キャンペーンID',
+  'キャンペーン名',
+  '精査軸',
+  '精査ポイント',
+  '実績=1以上の場合、平均対比で○○%で停止',
+  '実績=0の場合、平均対比で○○%で停止',
+  '平均実績の計算期間 前○○日間',
+  '休日実行'
+]
+
+// Required headers for Genre Keyword
+const REQUIRED_GENRE_KEYWORD_HEADERS = [
+  'アカウントID',
+  'アカウント名',
+  'キャンペーンID',
+  'キャンペーン名',
+  '広告グループID',
+  '広告グループ名',
+  '入稿フラグ',
+  '設定ジャンル1',
+  '設定ジャンル2',
+  '設定ジャンル3',
+  '設定ジャンル4',
+  '設定ジャンル5',
+  '設定ジャンル6',
+  '除外ジャンル1',
+  '除外ジャンル2',
+  '除外ジャンル3',
+  '除外ジャンル4',
+  '除外ジャンル5',
+  '固定キーワード設定',
+  '固定キーワード除外'
+]
+
 /**
  * Validate KW Filtering data
  */
@@ -29,6 +67,16 @@ export const validateKwFilteringData = (data: Record<string, string>[]): FileVal
     return {
       isValid: false,
       errors: [{ message: 'File is empty or invalid format' }]
+    }
+  }
+
+  // Check if all required headers are present
+  const missingHeaders = REQUIRED_KW_FILTERING_HEADERS.filter(header => !Object.keys(data[0] || {}).includes(header))
+
+  if (missingHeaders.length > 0) {
+    return {
+      isValid: false,
+      errors: [{ message: '[header]が間違っています。再度記入してください。' }]
     }
   }
 
@@ -142,6 +190,16 @@ export const validateGenreKeywordData = (data: Record<string, string>[]): FileVa
     return {
       isValid: false,
       errors: [{ message: 'File is empty or invalid format' }]
+    }
+  }
+
+  // Check if all required headers are present
+  const missingHeaders = REQUIRED_GENRE_KEYWORD_HEADERS.filter(header => !Object.keys(data[0] || {}).includes(header))
+
+  if (missingHeaders.length > 0) {
+    return {
+      isValid: false,
+      errors: [{ message: '[header]が間違っています。再度記入してください。' }]
     }
   }
 

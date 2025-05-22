@@ -1,6 +1,8 @@
 // src/hooks/useBulkUpload.ts
 import { useState, useCallback } from 'react'
 
+import { useTranslations } from 'next-intl'
+
 import { readAndParseFile, convertParsedDataToObjects } from '@/utils/fileReader'
 import { validateKwFilteringData, validateGenreKeywordData } from '@/utils/fileValidator'
 
@@ -24,6 +26,7 @@ interface UseBulkUploadReturn {
 }
 
 export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadReturn => {
+  const t = useTranslations()
   const [isUploading, setIsUploading] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [errors, setErrors] = useState<ValidationError[] | null>(null)
@@ -167,8 +170,8 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
         return
       }
 
-      // Call success callback
-      options?.onSuccess?.(responseData.message)
+      // Call success callback with Japanese success message
+      options?.onSuccess?.(t('settingsUpdateSuccess'))
     } catch (error) {
       console.error('Error uploading file:', error)
       const message = error instanceof Error ? error.message : 'An unexpected error occurred'

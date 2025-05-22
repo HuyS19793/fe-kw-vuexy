@@ -29,6 +29,7 @@ export async function readAndParseFile(file: File): Promise<ParsedFileData> {
 async function parseCSVFile(file: File): Promise<ParsedFileData> {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
+      encoding: 'Shift_JIS',
       complete: results => {
         const rows = results.data as string[][]
 

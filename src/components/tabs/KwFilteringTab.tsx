@@ -118,16 +118,16 @@ const KwFilteringTab: React.FC<KwFilteringTabProps> = ({
               {t('templateDescriptionCampaign')}
             </Typography>
 
-            <Button
-              variant='outlined'
-              color='primary'
-              startIcon={<i className='tabler-download' />}
-              onClick={handleDownloadTemplate}
-              className='self-start'
-              disabled={isLoading}
-            >
-              {isLoading ? t('downloadingTemplate') : t('downloadTemplate')}
-            </Button>
+            <Box className='flex justify-between items-center mb-4'>
+              <Button
+                variant='outlined'
+                onClick={handleDownloadTemplate}
+                disabled={isLoading}
+                startIcon={<i className='tabler-download' />}
+              >
+                {t('downloadTemplate')}
+              </Button>
+            </Box>
           </Box>
         </Paper>
 
