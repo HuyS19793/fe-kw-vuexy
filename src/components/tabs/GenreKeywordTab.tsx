@@ -131,6 +131,7 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({
               'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
             }}
             onFileSelected={handleFileSelection}
+            hideUploadButton
           />
 
           {/* File Preview Component with actual parsed data */}

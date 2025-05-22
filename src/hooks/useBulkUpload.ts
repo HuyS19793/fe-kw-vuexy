@@ -32,16 +32,16 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
   const [errors, setErrors] = useState<ValidationError[] | null>(null)
   const [previewData, setPreviewData] = useState<FilePreviewData | null>(null)
 
-  const resetErrors = (): void => {
+  const resetErrors = useCallback((): void => {
     setErrors(null)
-  }
+  }, [])
 
-  const resetAll = (): void => {
+  const resetAll = useCallback((): void => {
     setErrors(null)
     setPreviewData(null)
     setIsLoading(false)
     setIsUploading(false)
-  }
+  }, [])
 
   const downloadTemplate = async (params: TemplateDownloadParams): Promise<void> => {
     const { accountId, templateType } = params

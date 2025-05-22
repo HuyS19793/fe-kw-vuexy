@@ -1,5 +1,5 @@
 // components/BulkUploadDialog.tsx
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 
 import {
   Dialog,
@@ -75,15 +75,15 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
     genreKeyword?: () => void
   }>({})
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number): void => {
+  const handleTabChange = useCallback((_event: React.SyntheticEvent, newValue: number): void => {
     setActiveTab(newValue)
-  }
+  }, [])
 
-  const handleFileSelect = (file: File | null) => {
+  const handleFileSelect = useCallback((file: File | null) => {
     setSelectedFile(file)
-  }
+  }, [])
 
-  const handleUpload = async () => {
+  const handleUpload = useCallback(async () => {
     if (!selectedFile) return
 
     setIsUploading(true)
@@ -99,9 +99,9 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
     } finally {
       setIsUploading(false)
     }
-  }
+  }, [selectedFile, activeTab, onUploadSuccess])
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     // Reset all states before closing
     if (resetFunctions.kwFiltering) {
       resetFunctions.kwFiltering()
@@ -116,7 +116,15 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
 
     // Close dialog
     onClose()
-  }
+  }, [resetFunctions, onClose])
+
+  const registerKwFilteringReset = useCallback((resetFn: () => void) => {
+    setResetFunctions(prev => ({ ...prev, kwFiltering: resetFn }))
+  }, [])
+
+  const registerGenreKeywordReset = useCallback((resetFn: () => void) => {
+    setResetFunctions(prev => ({ ...prev, genreKeyword: resetFn }))
+  }, [])
 
   return (
     <Dialog
@@ -206,9 +214,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
               onUploadSuccess={onUploadSuccess}
               onFileSelected={handleFileSelect}
               hideUploadButton={true}
-              registerResetFunction={resetFn => {
-                setResetFunctions(prev => ({ ...prev, kwFiltering: resetFn }))
-              }}
+              registerResetFunction={registerKwFilteringReset}
             />
           </TabPanel>
 
@@ -217,9 +223,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
               accountId={accountId}
               accountName={accountName}
               onUploadSuccess={onUploadSuccess}
-              registerResetFunction={resetFn => {
-                setResetFunctions(prev => ({ ...prev, genreKeyword: resetFn }))
-              }}
+              registerResetFunction={registerGenreKeywordReset}
             />
           </TabPanel>
         </div>
