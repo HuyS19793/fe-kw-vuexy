@@ -1,5 +1,5 @@
-// components/tabs/GenreKeywordTab.tsx
-import React, { useState } from 'react'
+// src/components/tabs/GenreKeywordTab.tsx
+import React, { useState, useEffect } from 'react'
 
 import { Typography, Button, Box, Alert, Paper, Divider } from '@mui/material'
 import { useTranslations } from 'next-intl'
@@ -7,100 +7,77 @@ import { useTranslations } from 'next-intl'
 import FileUploader from '../FileUploader'
 import FilePreview from '../FilePreview'
 import ValidationErrors from '../ValidationErrors'
-import type { UploadStatus, ValidationError, UploadTabType } from '@/types/bulkUpload'
+import { useBulkUpload } from '@/hooks/useBulkUpload'
+import type { UploadTabType } from '@/types/bulkUpload'
 
 interface GenreKeywordTabProps {
   accountId: string
   accountName: string
   onUploadSuccess: (tabType: UploadTabType) => void
+  registerResetFunction?: (resetFn: () => void) => void
 }
 
-const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({ accountId, accountName, onUploadSuccess }) => {
+const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({
+  accountId,
+  accountName,
+  onUploadSuccess,
+  registerResetFunction
+}) => {
   const t = useTranslations()
-
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus>({
-    loading: false,
-    error: null,
-    success: false
-  })
-
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
+  // Use the enhanced hook
+  const {
+    isLoading,
+    isUploading,
+    errors,
+    previewData,
+    previewFile,
+    uploadFile,
+    downloadTemplate,
+    resetErrors,
+    resetAll
+  } = useBulkUpload({
+    onSuccess: () => {
+      onUploadSuccess('Genre Keyword')
+    },
+    onError: errors => {
+      console.error('Upload errors:', errors)
+    }
+  })
+
   const handleDownloadTemplate = async (): Promise<void> => {
-    try {
-      // API call to download template will be implemented later
-      console.log('Download template for Genre Keyword')
+    await downloadTemplate({
+      accountId,
+      templateType: 'genre-keyword'
+    })
+  }
 
-      // Placeholder for actual implementation
-      const response = await fetch(`/api/template/genre-keyword?accountId=${accountId}`)
+  // Handle file selection
+  const handleFileSelection = (file: File | null) => {
+    setSelectedFile(file)
 
-      if (!response.ok) throw new Error('Failed to download template')
-
-      // Handle the file download
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-
-      a.href = url
-      a.download = `genre_keyword_setting_template_${accountName}_${accountId}.xlsx`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (error) {
-      console.error('Error downloading template:', error)
-
-      // Handle error - could set state to show error message
+    if (file) {
+      // Generate preview when file is selected
+      previewFile(file, 'genre-keyword')
+    } else {
+      // Reset all states when file is removed
+      resetAll()
     }
   }
 
+  // Handle file upload
   const handleFileUpload = async (file: File): Promise<void> => {
-    setUploadStatus({ loading: true, error: null, success: false })
+    if (!file) return
 
-    try {
-      // Will be replaced with actual API call
-      // Simulate API call and validation
-      // For demo, let's simulate a validation error
-      const simulateValidation = Math.random() > 0.7
-
-      if (simulateValidation) {
-        // Simulate validation errors
-        const errors: ValidationError[] = [
-          { row: 2, column: '入稿フラグ', message: t('invalidSubmitFlag') },
-          { row: 4, column: '設定ジャンル1', message: t('invalidGenreValue') }
-        ]
-
-        setTimeout(() => {
-          setUploadStatus({
-            loading: false,
-            error: errors,
-            success: false
-          })
-        }, 1500)
-
-        return
-      }
-
-      // Simulate success
-      setTimeout(() => {
-        setUploadStatus({
-          loading: false,
-          error: null,
-          success: true
-        })
-
-        // Call the success callback
-        onUploadSuccess('Genre Keyword')
-      }, 1500)
-    } catch (error) {
-      console.error('Error uploading file:', error)
-      setUploadStatus({
-        loading: false,
-        error: [{ message: t('unexpectedUploadError') }],
-        success: false
-      })
-    }
+    await uploadFile(file, 'genre-keyword')
   }
+
+  useEffect(() => {
+    if (registerResetFunction) {
+      registerResetFunction(resetAll)
+    }
+  }, [registerResetFunction, resetAll])
 
   return (
     <Box className='space-y-4'>
@@ -108,12 +85,7 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({ accountId, accountNam
         {t('genreKeywordDescription')}
       </Typography>
 
-      {uploadStatus.error && (
-        <ValidationErrors
-          errors={uploadStatus.error}
-          onClose={() => setUploadStatus(prev => ({ ...prev, error: null }))}
-        />
-      )}
+      {errors && errors.length > 0 && <ValidationErrors errors={errors} onClose={resetErrors} />}
 
       <Paper elevation={0} variant='outlined' className='p-4 border border-gray-200'>
         <Box className='flex flex-col space-y-4'>
@@ -131,8 +103,9 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({ accountId, accountNam
             startIcon={<i className='tabler-download' />}
             onClick={handleDownloadTemplate}
             className='self-start'
+            disabled={isLoading}
           >
-            {t('downloadTemplate')}
+            {isLoading ? t('downloadingTemplate') : t('downloadTemplate')}
           </Button>
         </Box>
       </Paper>
@@ -151,21 +124,21 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({ accountId, accountNam
 
           <FileUploader
             onFileUpload={handleFileUpload}
-            loading={uploadStatus.loading}
+            loading={isUploading}
             accept={{
               'text/csv': ['.csv'],
               'application/vnd.ms-excel': ['.xls'],
               'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
             }}
-            onFileSelected={setSelectedFile}
+            onFileSelected={handleFileSelection}
           />
 
-          {/* File Preview Component */}
-          <FilePreview file={selectedFile} templateType='genre-keyword' previewRowCount={5} />
+          {/* File Preview Component with actual parsed data */}
+          <FilePreview file={selectedFile} templateType='genre-keyword' previewRowCount={5} previewData={previewData} />
 
-          {uploadStatus.success && (
-            <Alert severity='success' className='mt-3'>
-              {t('settingsUpdateSuccess')}
+          {isUploading && (
+            <Alert severity='info' className='mt-3'>
+              {t('Uploading')}...
             </Alert>
           )}
         </Box>

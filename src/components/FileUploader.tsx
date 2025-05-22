@@ -117,7 +117,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     setFile(null)
     setDropzoneError(null)
 
-    // Notify parent component about file removal
+    // Notify parent component about file removal (đảm bảo callback luôn được gọi)
     if (onFileSelected) {
       onFileSelected(null)
     }

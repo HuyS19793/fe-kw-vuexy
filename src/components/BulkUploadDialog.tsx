@@ -70,6 +70,11 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState<boolean>(false)
 
+  const [resetFunctions, setResetFunctions] = useState<{
+    kwFiltering?: () => void
+    genreKeyword?: () => void
+  }>({})
+
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number): void => {
     setActiveTab(newValue)
   }
@@ -96,10 +101,27 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
     }
   }
 
+  const handleClose = () => {
+    // Reset all states before closing
+    if (resetFunctions.kwFiltering) {
+      resetFunctions.kwFiltering()
+    }
+
+    if (resetFunctions.genreKeyword) {
+      resetFunctions.genreKeyword()
+    }
+
+    // Clear selected file
+    setSelectedFile(null)
+
+    // Close dialog
+    onClose()
+  }
+
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth='lg'
       fullWidth
       fullScreen={isSmallScreen}
@@ -145,7 +167,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
             </Box>
           </Box>
         </Box>
-        <DialogCloseButton onClick={onClose}>
+        <DialogCloseButton onClick={handleClose}>
           <i className='tabler-x' />
         </DialogCloseButton>
       </DialogTitle>
@@ -177,18 +199,28 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
         {' '}
         {/* Adjusted for bottom action bar */}
         <div className='h-full overflow-auto px-6 py-4'>
-          <TabPanel value={activeTab} index={0} onUpload={handleUpload} isLoading={isUploading} onCancel={onClose}>
+          <TabPanel value={activeTab} index={0} onUpload={handleUpload} isLoading={isUploading} onCancel={handleClose}>
             <KwFilteringTab
               accountId={accountId}
               accountName={accountName}
               onUploadSuccess={onUploadSuccess}
               onFileSelected={handleFileSelect}
               hideUploadButton={true}
+              registerResetFunction={resetFn => {
+                setResetFunctions(prev => ({ ...prev, kwFiltering: resetFn }))
+              }}
             />
           </TabPanel>
 
-          <TabPanel value={activeTab} index={1} onUpload={handleUpload} isLoading={isUploading} onCancel={onClose}>
-            <GenreKeywordTab accountId={accountId} accountName={accountName} onUploadSuccess={onUploadSuccess} />
+          <TabPanel value={activeTab} index={1} onUpload={handleUpload} isLoading={isUploading} onCancel={handleClose}>
+            <GenreKeywordTab
+              accountId={accountId}
+              accountName={accountName}
+              onUploadSuccess={onUploadSuccess}
+              registerResetFunction={resetFn => {
+                setResetFunctions(prev => ({ ...prev, genreKeyword: resetFn }))
+              }}
+            />
           </TabPanel>
         </div>
       </DialogContent>
@@ -202,7 +234,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
           gap: 2
         }}
       >
-        <Button variant='outlined' onClick={onClose} startIcon={<i className='tabler-x' />}>
+        <Button variant='outlined' onClick={handleClose} startIcon={<i className='tabler-x' />}>
           {t('Cancel')}
         </Button>
         <Button

@@ -1,5 +1,5 @@
-// components/tabs/KwFilteringTab.tsx
-import React, { useState } from 'react'
+// src/components/tabs/KwFilteringTab.tsx
+import React, { useState, useEffect } from 'react'
 
 import { Typography, Button, Box, Alert, Paper, useTheme, useMediaQuery } from '@mui/material'
 import { useTranslations } from 'next-intl'
@@ -7,7 +7,8 @@ import { useTranslations } from 'next-intl'
 import FileUploader from '../FileUploader'
 import FilePreview from '../FilePreview'
 import ValidationErrors from '../ValidationErrors'
-import type { UploadStatus, ValidationError, UploadTabType } from '@/types/bulkUpload'
+import { useBulkUpload } from '@/hooks/useBulkUpload'
+import type { UploadTabType } from '@/types/bulkUpload'
 
 interface KwFilteringTabProps {
   accountId: string
@@ -15,6 +16,7 @@ interface KwFilteringTabProps {
   onUploadSuccess: (tabType: UploadTabType) => void
   onFileSelected?: (file: File | null) => void
   hideUploadButton?: boolean
+  registerResetFunction?: (resetFn: () => void) => void
 }
 
 const KwFilteringTab: React.FC<KwFilteringTabProps> = ({
@@ -22,78 +24,53 @@ const KwFilteringTab: React.FC<KwFilteringTabProps> = ({
   accountName,
   onUploadSuccess,
   onFileSelected,
-  hideUploadButton = false
+  hideUploadButton = false,
+  registerResetFunction
 }) => {
   const t = useTranslations()
   const theme = useTheme()
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'))
 
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus>({
-    loading: false,
-    error: null,
-    success: false
-  })
-
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
-  const handleDownloadTemplate = async (): Promise<void> => {
-    // Implementation remains the same
-  }
-
-  const handleFileUpload = async (file: File): Promise<void> => {
-    // Only show upload success message if not hiding upload button
-    if (hideUploadButton) return
-
-    setUploadStatus({ loading: true, error: null, success: false })
-
-    try {
-      // Simulate API call and validation
-      // For demo, let's simulate a validation error
-      const simulateValidation = Math.random() > 0.7
-
-      if (simulateValidation) {
-        // Simulate validation errors
-        const errors: ValidationError[] = [
-          { row: 3, column: '精査条件', message: t('invalidInspectionCondition') },
-          { row: 5, column: '休日実行', message: t('invalidHolidayExecution') },
-          { message: t('someFieldsAreMissing') } // General error without row/column
-        ]
-
-        setTimeout(() => {
-          setUploadStatus({
-            loading: false,
-            error: errors,
-            success: false
-          })
-        }, 1500)
-
-        return
-      }
-
-      // Simulate success
-      setTimeout(() => {
-        setUploadStatus({
-          loading: false,
-          error: null,
-          success: true
-        })
-
-        // Call the success callback
-        onUploadSuccess('KW Filtering')
-      }, 1500)
-    } catch (error) {
-      console.error('Error uploading file:', error)
-      setUploadStatus({
-        loading: false,
-        error: [{ message: t('unexpectedUploadError') }],
-        success: false
-      })
+  // Use the enhanced hook
+  const {
+    isLoading,
+    isUploading,
+    errors,
+    previewData,
+    previewFile,
+    uploadFile,
+    downloadTemplate,
+    resetErrors,
+    resetAll
+  } = useBulkUpload({
+    onSuccess: () => {
+      onUploadSuccess('KW Filtering')
+    },
+    onError: errors => {
+      console.error('Upload errors:', errors)
     }
+  })
+
+  const handleDownloadTemplate = async (): Promise<void> => {
+    await downloadTemplate({
+      accountId,
+      templateType: 'kw-filtering'
+    })
   }
 
-  // Handle local file selection
+  // Handle file selection
   const handleFileSelection = (file: File | null) => {
     setSelectedFile(file)
+
+    if (file) {
+      // Generate preview when file is selected
+      previewFile(file, 'kw-filtering')
+    } else {
+      // Reset all states when file is removed
+      resetAll()
+    }
 
     // Pass to parent component if callback exists
     if (onFileSelected) {
@@ -101,18 +78,26 @@ const KwFilteringTab: React.FC<KwFilteringTabProps> = ({
     }
   }
 
+  // Handle file upload
+  const handleFileUpload = async (file: File): Promise<void> => {
+    if (!file) return
+
+    await uploadFile(file, 'kw-filtering')
+  }
+
+  useEffect(() => {
+    if (registerResetFunction) {
+      registerResetFunction(resetAll)
+    }
+  }, [registerResetFunction, resetAll])
+
   return (
     <Box className='space-y-4' sx={{ height: '100%', overflowY: 'auto' }}>
       <Typography variant='body1' className='mb-4'>
         {t('kwFilteringDescription')}
       </Typography>
 
-      {uploadStatus.error && (
-        <ValidationErrors
-          errors={uploadStatus.error}
-          onClose={() => setUploadStatus(prev => ({ ...prev, error: null }))}
-        />
-      )}
+      {errors && errors.length > 0 && <ValidationErrors errors={errors} onClose={resetErrors} />}
 
       {/* Layout changes: Use grid for larger screens */}
       <Box
@@ -139,8 +124,9 @@ const KwFilteringTab: React.FC<KwFilteringTabProps> = ({
               startIcon={<i className='tabler-download' />}
               onClick={handleDownloadTemplate}
               className='self-start'
+              disabled={isLoading}
             >
-              {t('downloadTemplate')}
+              {isLoading ? t('downloadingTemplate') : t('downloadTemplate')}
             </Button>
           </Box>
         </Paper>
@@ -165,7 +151,7 @@ const KwFilteringTab: React.FC<KwFilteringTabProps> = ({
       <Paper elevation={0} variant='outlined' className='p-4 border border-gray-200'>
         <FileUploader
           onFileUpload={handleFileUpload}
-          loading={uploadStatus.loading}
+          loading={isUploading}
           accept={{
             'text/csv': ['.csv'],
             'application/vnd.ms-excel': ['.xls'],
@@ -175,15 +161,15 @@ const KwFilteringTab: React.FC<KwFilteringTabProps> = ({
           hideUploadButton={hideUploadButton}
         />
 
-        {uploadStatus.success && (
-          <Alert severity='success' className='mt-3'>
-            {t('settingsUpdateSuccess')}
+        {isUploading && (
+          <Alert severity='info' className='mt-3'>
+            {t('Uploading')}...
           </Alert>
         )}
       </Paper>
 
-      {/* File Preview in full width */}
-      <FilePreview file={selectedFile} templateType='kw-filtering' previewRowCount={5} />
+      {/* File Preview - now using the actual parsed data */}
+      <FilePreview file={selectedFile} templateType='kw-filtering' previewRowCount={5} previewData={previewData} />
     </Box>
   )
 }

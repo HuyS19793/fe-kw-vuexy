@@ -1,4 +1,4 @@
-// components/FilePreview.tsx
+// src/components/FilePreview.tsx
 import React, { useState, useEffect } from 'react'
 
 import {
@@ -21,23 +21,26 @@ import {
 } from '@mui/material'
 import { useTranslations } from 'next-intl'
 
+import { readAndParseFile } from '@/utils/fileReader'
+import type { FilePreviewData } from '@/types/bulkUpload'
+
 interface FilePreviewProps {
   file: File | null
   previewRowCount?: number
   templateType: 'kw-filtering' | 'genre-keyword'
+  previewData?: FilePreviewData | null
 }
 
-interface PreviewData {
-  headers: string[]
-  rows: string[][]
-  totalRows: number
-}
-
-const FilePreview: React.FC<FilePreviewProps> = ({ file, previewRowCount = 5, templateType }) => {
+const FilePreview: React.FC<FilePreviewProps> = ({
+  file,
+  previewRowCount = 5,
+  templateType,
+  previewData: externalPreviewData
+}) => {
   const t = useTranslations()
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
-  const [previewData, setPreviewData] = useState<PreviewData | null>(null)
+  const [previewData, setPreviewData] = useState<FilePreviewData | null>(null)
   const [expanded, setExpanded] = useState<boolean>(true)
   const theme = useTheme()
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'))
@@ -46,6 +49,15 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, previewRowCount = 5, te
   const toggleExpanded = () => setExpanded(!expanded)
 
   useEffect(() => {
+    // If previewData is provided externally, use it
+    if (externalPreviewData) {
+      setPreviewData(externalPreviewData)
+      setLoading(false)
+      setError(null)
+
+      return
+    }
+
     if (!file) {
       setPreviewData(null)
       setError(null)
@@ -58,16 +70,13 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, previewRowCount = 5, te
       setError(null)
 
       try {
-        // In a real implementation, you'd parse the file based on its type (CSV, Excel)
-        // For this example, we'll simulate the parsing process
+        const parsedData = await readAndParseFile(file)
 
-        // Simulating file reading delay
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // Generate mock preview data based on template type
-        const mockData = generateMockPreviewData(templateType, previewRowCount)
-
-        setPreviewData(mockData)
+        setPreviewData({
+          headers: parsedData.headers,
+          rows: parsedData.rows.slice(0, previewRowCount),
+          totalRows: parsedData.totalRows
+        })
       } catch (err) {
         console.error('Error parsing file:', err)
         setError(t('fileParseError'))
@@ -77,86 +86,9 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, previewRowCount = 5, te
     }
 
     parseFile()
-  }, [file, previewRowCount, t, templateType])
+  }, [file, previewRowCount, t, externalPreviewData])
 
-  // Mock function to generate preview data based on template type
-  const generateMockPreviewData = (type: string, rowCount: number): PreviewData => {
-    let headers: string[] = []
-    const rows: string[][] = []
-
-    if (type === 'kw-filtering') {
-      headers = [
-        'アカウントID',
-        'アカウント名',
-        'キャンペーンID',
-        'キャンペーン名',
-        '精査軸',
-        '精査ポイント',
-        '実績=1以上の場合、平均対比で○○%で停止',
-        '実績=0の場合、平均対比で○○%で停止',
-        '平均実績の計算期間 前○○日間',
-        '休日実行'
-      ]
-
-      // Generate mock rows
-      for (let i = 0; i < rowCount; i++) {
-        rows.push([
-          `acc-${i + 1}`,
-          `テストアカウント${i + 1}`,
-          `camp-${i + 1}`,
-          `テストキャンペーン${i + 1}`,
-          i % 3 === 0 ? 'CPA' : i % 3 === 1 ? 'CPC' : 'CPM',
-          'ページビュー(Web)',
-          '150%',
-          '300%',
-          '3',
-          i % 2 === 0 ? 'ON' : 'OFF'
-        ])
-      }
-    } else {
-      // genre-keyword template
-      headers = [
-        'アカウントID',
-        'アカウント名',
-        'キャンペーンID',
-        'キャンペーン名',
-        '広告グループID',
-        '広告グループ名',
-        '入稿フラグ',
-        '設定ジャンル1',
-        '設定ジャンル2',
-        '除外ジャンル1',
-        '固定キーワード設定',
-        '固定キーワード除外'
-      ]
-
-      // Generate mock rows
-      for (let i = 0; i < rowCount; i++) {
-        rows.push([
-          `acc-${i + 1}`,
-          `テストアカウント${i + 1}`,
-          `camp-${i + 1}`,
-          `テストキャンペーン${i + 1}`,
-          `adg-${i + 1}`,
-          `テスト広告グループ${i + 1}`,
-          i % 2 === 0 ? 'ON' : 'OFF',
-          'エンターテイメント',
-          'スポーツ',
-          'その他',
-          'テスト,キーワード,設定',
-          '除外,キーワード'
-        ])
-      }
-    }
-
-    return {
-      headers,
-      rows,
-      totalRows: 15 // Mock total row count
-    }
-  }
-
-  if (!file) {
+  if ((!file && !externalPreviewData) || (externalPreviewData && externalPreviewData.rows.length === 0)) {
     return null
   }
 
@@ -248,7 +180,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({ file, previewRowCount = 5, te
             {previewData.totalRows > previewRowCount && (
               <Box className='p-2 text-center border-t bg-gray-50'>
                 <Typography variant='caption' color='textSecondary'>
-                  {t('showingFirstXRows', { count: previewRowCount, total: previewData.totalRows })}
+                  {t('showingFirstXRows', { count: previewData.rows.length, total: previewData.totalRows })}
                 </Typography>
               </Box>
             )}

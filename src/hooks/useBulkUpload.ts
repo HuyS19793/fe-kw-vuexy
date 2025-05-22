@@ -1,7 +1,8 @@
-// hooks/useBulkUpload.ts
+// src/hooks/useBulkUpload.ts
 import { useState, useCallback } from 'react'
 
-import { parseCSV, csvToObjectArray, validateKwFilteringData, validateGenreKeywordData } from '@/utils/fileValidator'
+import { readAndParseFile, convertParsedDataToObjects } from '@/utils/fileReader'
+import { validateKwFilteringData, validateGenreKeywordData } from '@/utils/fileValidator'
 
 import type { ValidationError, FileUploadResponse, TemplateDownloadParams, FilePreviewData } from '@/types/bulkUpload'
 
@@ -19,6 +20,7 @@ interface UseBulkUploadReturn {
   uploadFile: (file: File, templateType: 'kw-filtering' | 'genre-keyword') => Promise<void>
   previewFile: (file: File, templateType: 'kw-filtering' | 'genre-keyword') => Promise<void>
   resetErrors: () => void
+  resetAll: () => void
 }
 
 export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadReturn => {
@@ -29,6 +31,13 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
 
   const resetErrors = (): void => {
     setErrors(null)
+  }
+
+  const resetAll = (): void => {
+    setErrors(null)
+    setPreviewData(null)
+    setIsLoading(false)
+    setIsUploading(false)
   }
 
   const downloadTemplate = async (params: TemplateDownloadParams): Promise<void> => {
@@ -83,21 +92,15 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
     setPreviewData(null)
 
     try {
-      // Read file content
-      const fileContent = await readFileAsText(file)
+      // Read and parse file content
+      const parsedData = await readAndParseFile(file)
 
-      // Parse CSV
-      const csvData = parseCSV(fileContent)
-
-      // Extract headers
-      const headers = csvData[0]
-
-      // Convert to object array for validation
-      const data = csvToObjectArray(csvData, headers)
+      // Convert parsed data to objects for validation
+      const objectData = convertParsedDataToObjects(parsedData)
 
       // Validate data based on template type
       const validationResult =
-        templateType === 'kw-filtering' ? validateKwFilteringData(data) : validateGenreKeywordData(data)
+        templateType === 'kw-filtering' ? validateKwFilteringData(objectData) : validateGenreKeywordData(objectData)
 
       // Set errors if any
       if (!validationResult.isValid) {
@@ -106,13 +109,17 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
 
       // Set preview data
       setPreviewData({
-        headers,
-        rows: csvData.slice(1, 6), // First 5 rows
-        totalRows: csvData.length - 1 // Exclude header row
+        headers: parsedData.headers,
+        rows: parsedData.rows.slice(0, 5), // Show first 5 rows in preview
+        totalRows: parsedData.totalRows
       })
     } catch (error) {
       console.error('Error previewing file:', error)
-      setErrors([{ message: 'Error previewing file. Please check the file format.' }])
+      setErrors([
+        {
+          message: error instanceof Error ? error.message : 'Error previewing file. Please check the file format.'
+        }
+      ])
     } finally {
       setIsLoading(false)
     }
@@ -123,15 +130,13 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
     setErrors(null)
 
     try {
-      // Read and validate the file first
-      const fileContent = await readFileAsText(file)
-      const csvData = parseCSV(fileContent)
-      const headers = csvData[0]
-      const data = csvToObjectArray(csvData, headers)
+      // Read and parse the file
+      const parsedData = await readAndParseFile(file)
+      const objectData = convertParsedDataToObjects(parsedData)
 
       // Validate data
       const validationResult =
-        templateType === 'kw-filtering' ? validateKwFilteringData(data) : validateGenreKeywordData(data)
+        templateType === 'kw-filtering' ? validateKwFilteringData(objectData) : validateGenreKeywordData(objectData)
 
       // If validation fails, show errors
       if (!validationResult.isValid) {
@@ -141,10 +146,12 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
         return
       }
 
+      // Create form data for API call
       const formData = new FormData()
 
       formData.append('file', file)
 
+      // Call API to upload the file
       const response = await fetch(`/api/upload/${templateType}`, {
         method: 'POST',
         body: formData
@@ -152,6 +159,7 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
 
       const responseData: FileUploadResponse = await response.json()
 
+      // Handle API response
       if (!responseData.success) {
         setErrors(responseData.errors || [{ message: responseData.message || 'Upload failed' }])
         options?.onError?.(responseData.errors)
@@ -159,6 +167,7 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
         return
       }
 
+      // Call success callback
       options?.onSuccess?.(responseData.message)
     } catch (error) {
       console.error('Error uploading file:', error)
@@ -171,27 +180,6 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
     }
   }
 
-  // Helper function to read file as text
-  const readFileAsText = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-
-      reader.onload = event => {
-        if (event.target?.result) {
-          resolve(event.target.result.toString())
-        } else {
-          reject(new Error('Failed to read file'))
-        }
-      }
-
-      reader.onerror = () => {
-        reject(new Error('Error reading file'))
-      }
-
-      reader.readAsText(file)
-    })
-  }
-
   return {
     isUploading,
     isLoading,
@@ -200,6 +188,7 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
     downloadTemplate,
     uploadFile,
     previewFile,
-    resetErrors
+    resetErrors,
+    resetAll
   }
 }
