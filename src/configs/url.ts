@@ -17,10 +17,16 @@ const URLS = {
 
     // Settings
     campaignSetting: '/campaign/settings/',
-    adgroupSetting: '/adgroup/settings/'
+    adgroupSetting: '/adgroup/settings/',
+
+    // Bulk settings
+    bulkSettingTemplate: '/bulk-setting/template/download/',
+    bulkSettingUpload: '/bulk-setting/upload/'
   },
   api: {
-    redirectX: '/api/credential/x/redirect'
+    redirectX: '/api/credential/x/redirect',
+    bulkTemplate: '/api/template',
+    bulkUpload: '/api/upload'
   }
 }
 

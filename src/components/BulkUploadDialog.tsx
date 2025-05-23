@@ -13,14 +13,15 @@ import {
   useMediaQuery,
   useTheme,
   Button,
-  Chip
+  Chip,
+  Tooltip
 } from '@mui/material'
 import { useTranslations } from 'next-intl'
 
 import GenreKeywordTab from './tabs/GenreKeywordTab'
 import KwFilteringTab from './tabs/KwFilteringTab'
 import DialogCloseButton from '@/components/dialogs/DialogCloseButton'
-import type { UploadTabType } from '@/types/bulkUpload'
+import type { UploadTabType, ValidationError } from '@/types/bulkUpload'
 
 interface BulkUploadDialogProps {
   open: boolean
@@ -69,6 +70,8 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'))
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState<boolean>(false)
+  const [kwFilteringErrors, setKwFilteringErrors] = useState<ValidationError[] | null>(null)
+  const [genreKeywordErrors, setGenreKeywordErrors] = useState<ValidationError[] | null>(null)
 
   const [resetFunctions, setResetFunctions] = useState<{
     kwFiltering?: () => void
@@ -82,6 +85,20 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
   const handleFileSelect = useCallback((file: File | null) => {
     setSelectedFile(file)
   }, [])
+
+  const handleKwFilteringErrors = useCallback((errors: ValidationError[] | null) => {
+    setKwFilteringErrors(errors)
+  }, [])
+
+  const handleGenreKeywordErrors = useCallback((errors: ValidationError[] | null) => {
+    setGenreKeywordErrors(errors)
+  }, [])
+
+  // Determine if current tab has validation errors
+  const hasErrors =
+    activeTab === 0
+      ? kwFilteringErrors && kwFilteringErrors.length > 0
+      : genreKeywordErrors && genreKeywordErrors.length > 0
 
   const handleUpload = useCallback(async () => {
     if (!selectedFile) return
@@ -213,6 +230,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
               accountName={accountName}
               onUploadSuccess={onUploadSuccess}
               onFileSelected={handleFileSelect}
+              onValidationErrors={handleKwFilteringErrors}
               hideUploadButton={true}
               registerResetFunction={registerKwFilteringReset}
             />
@@ -223,6 +241,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
               accountId={accountId}
               accountName={accountName}
               onUploadSuccess={onUploadSuccess}
+              onValidationErrors={handleGenreKeywordErrors}
               registerResetFunction={registerGenreKeywordReset}
             />
           </TabPanel>
@@ -241,23 +260,28 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
         <Button variant='outlined' onClick={handleClose} startIcon={<i className='tabler-x' />}>
           {t('Cancel')}
         </Button>
-        <Button
-          variant='contained'
-          color='primary'
-          disabled={!selectedFile || isUploading}
-          onClick={handleUpload}
-          startIcon={isUploading ? null : <i className='tabler-upload' />}
-          sx={{ minWidth: 120 }}
-        >
-          {isUploading ? (
-            <>
-              <span className='mr-2'>{t('Uploading')}</span>
-              <span className='animate-pulse'>...</span>
-            </>
-          ) : (
-            t('Upload')
-          )}
-        </Button>
+        <Tooltip title={hasErrors ? t('correctValidationErrorsBeforeUploading') : ''} placement='top'>
+          <span>
+            {/* Wrapper needed for Tooltip with disabled button */}
+            <Button
+              variant='contained'
+              color='primary'
+              disabled={!selectedFile || isUploading === true || hasErrors === true}
+              onClick={handleUpload}
+              startIcon={isUploading ? null : <i className='tabler-upload' />}
+              sx={{ minWidth: 120 }}
+            >
+              {isUploading ? (
+                <>
+                  <span className='mr-2'>{t('Uploading')}</span>
+                  <span className='animate-pulse'>...</span>
+                </>
+              ) : (
+                t('Upload')
+              )}
+            </Button>
+          </span>
+        </Tooltip>
       </DialogActions>
     </Dialog>
   )

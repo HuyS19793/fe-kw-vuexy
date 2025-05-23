@@ -8,12 +8,13 @@ import FileUploader from '../FileUploader'
 import FilePreview from '../FilePreview'
 import ValidationErrors from '../ValidationErrors'
 import { useBulkUpload } from '@/hooks/useBulkUpload'
-import type { UploadTabType } from '@/types/bulkUpload'
+import type { UploadTabType, ValidationError } from '@/types/bulkUpload'
 
 interface GenreKeywordTabProps {
   accountId: string
   accountName: string
   onUploadSuccess: (tabType: UploadTabType) => void
+  onValidationErrors?: (errors: ValidationError[] | null) => void
   registerResetFunction?: (resetFn: () => void) => void
 }
 
@@ -21,6 +22,7 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({
   accountId,
   accountName,
   onUploadSuccess,
+  onValidationErrors,
   registerResetFunction
 }) => {
   const t = useTranslations()
@@ -45,6 +47,13 @@ const GenreKeywordTab: React.FC<GenreKeywordTabProps> = ({
       console.error('Upload errors:', errors)
     }
   })
+
+  // Report validation errors to parent component
+  useEffect(() => {
+    if (onValidationErrors) {
+      onValidationErrors(errors)
+    }
+  }, [errors, onValidationErrors])
 
   const handleDownloadTemplate = async (): Promise<void> => {
     await downloadTemplate({

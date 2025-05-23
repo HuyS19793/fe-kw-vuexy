@@ -62,8 +62,16 @@ export const validateKwFilteringData = (data: Record<string, string>[]): FileVal
   const errors: ValidationError[] = []
   const validRows: KwFilteringRow[] = []
 
+  console.log('Starting KW Filtering validation with rows:', data.length)
+
+  if (data.length > 0) {
+    console.log('First row sample:', data[0])
+  }
+
   // Check if data is empty
   if (!data || data.length === 0) {
+    console.error('Empty data detected')
+
     return {
       isValid: false,
       errors: [{ message: 'File is empty or invalid format' }]
@@ -71,12 +79,50 @@ export const validateKwFilteringData = (data: Record<string, string>[]): FileVal
   }
 
   // Check if all required headers are present
-  const missingHeaders = REQUIRED_KW_FILTERING_HEADERS.filter(header => !Object.keys(data[0] || {}).includes(header))
+  const firstRowKeys = Object.keys(data[0] || {})
+
+  console.log('Available headers:', firstRowKeys)
+
+  // More flexible header check that accepts English alternatives
+  const getMissingHeaders = () => {
+    return REQUIRED_KW_FILTERING_HEADERS.filter(header => {
+      // Check for exact Japanese match
+      if (firstRowKeys.includes(header)) {
+        return false
+      }
+
+      // Check for English alternatives
+      const englishAlternatives = {
+        アカウントID: ['Account ID', 'AccountID'],
+        アカウント名: ['Account Name', 'AccountName'],
+        キャンペーンID: ['Campaign ID', 'CampaignID'],
+        キャンペーン名: ['Campaign Name', 'CampaignName'],
+        精査軸: ['Inspection Condition', 'InspectionCondition'],
+        精査ポイント: ['Inspection Point', 'InspectionPoint'],
+        '実績=1以上の場合、平均対比で○○%で停止': ['Performance Above One', 'StopPercentageAboveOne'],
+        '実績=0の場合、平均対比で○○%で停止': ['Performance Zero', 'StopPercentageZero'],
+        '平均実績の計算期間 前○○日間': ['Calculation Period', 'CalculationPeriod'],
+        休日実行: ['Holiday Execution', 'HolidayExecution']
+      }
+
+      const alternatives = englishAlternatives[header as keyof typeof englishAlternatives] || []
+
+      return !alternatives.some(alt => firstRowKeys.includes(alt))
+    })
+  }
+
+  const missingHeaders = getMissingHeaders()
 
   if (missingHeaders.length > 0) {
+    console.error('Missing headers:', missingHeaders)
+
     return {
       isValid: false,
-      errors: [{ message: '[header]が間違っています。再度記入してください。' }]
+      errors: [
+        {
+          message: `Missing required headers: ${missingHeaders.join(', ')}. Please use the correct template.`
+        }
+      ]
     }
   }
 

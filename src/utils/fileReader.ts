@@ -64,15 +64,39 @@ async function parseExcelFile(file: File): Promise<ParsedFileData> {
 
     reader.onload = e => {
       try {
+        console.log('Reading Excel file...')
         const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const workbook = XLSX.read(data, { type: 'array' })
+
+        const workbook = XLSX.read(data, {
+          type: 'array',
+          cellDates: true,
+          cellText: false
+        })
+
+        // Log workbook info for debugging
+        console.log('Workbook sheets:', workbook.SheetNames)
 
         // Assume first sheet
         const firstSheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[firstSheetName]
 
-        // Convert to array of arrays
-        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
+        console.log('Reading from sheet:', firstSheetName)
+
+        // Try with different options if default fails
+        let rows
+
+        try {
+          rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as string[][]
+        } catch (err) {
+          console.warn('First conversion attempt failed, trying with different options', err)
+          rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true }) as string[][]
+        }
+
+        console.log('Rows parsed:', rows.length)
+
+        if (rows.length > 0) {
+          console.log('Sample first row:', rows[0])
+        }
 
         if (rows.length === 0) {
           reject(new Error('Empty file'))
@@ -89,6 +113,7 @@ async function parseExcelFile(file: File): Promise<ParsedFileData> {
           totalRows: dataRows.length
         })
       } catch (error) {
+        console.error('Excel parsing error:', error)
         reject(new Error(`Error parsing Excel file: ${error instanceof Error ? error.message : String(error)}`))
       }
     }

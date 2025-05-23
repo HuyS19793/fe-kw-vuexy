@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react'
 
 import { useTranslations } from 'next-intl'
+import { toast } from 'react-toastify'
 
 import { readAndParseFile, convertParsedDataToObjects } from '@/utils/fileReader'
 import { validateKwFilteringData, validateGenreKeywordData } from '@/utils/fileValidator'
@@ -48,13 +49,16 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
 
     try {
       setIsLoading(true)
+      setErrors(null)
 
       const response = await fetch(`/api/template/${templateType}?accountId=${accountId}`, {
         method: 'GET'
       })
 
       if (!response.ok) {
-        throw new Error('Failed to download template')
+        const errorData = await response.json()
+
+        throw new Error(errorData.error || 'Failed to download template')
       }
 
       // Handle the file download
@@ -80,10 +84,16 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
+
+      toast.success(t('downloadTemplate') + ' ' + t('Success'))
+      options?.onSuccess?.('Template downloaded successfully')
     } catch (error) {
       console.error('Error downloading template:', error)
-      setErrors([{ message: 'Failed to download template. Please try again.' }])
-      options?.onError?.([{ message: 'Failed to download template. Please try again.' }])
+      const errorMessage = error instanceof Error ? error.message : t('downloadFailed')
+
+      setErrors([{ message: errorMessage }])
+      toast.error(errorMessage)
+      options?.onError?.([{ message: errorMessage }])
     } finally {
       setIsLoading(false)
     }
@@ -133,7 +143,7 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
     setErrors(null)
 
     try {
-      // Read and parse the file
+      // Read and parse the file for validation
       const parsedData = await readAndParseFile(file)
       const objectData = convertParsedDataToObjects(parsedData)
 
@@ -165,18 +175,23 @@ export const useBulkUpload = (options?: UseBulkUploadOptions): UseBulkUploadRetu
       // Handle API response
       if (!responseData.success) {
         setErrors(responseData.errors || [{ message: responseData.message || 'Upload failed' }])
+        toast.error(responseData.message || 'Upload failed')
         options?.onError?.(responseData.errors)
 
         return
       }
 
-      // Call success callback with Japanese success message
-      options?.onSuccess?.(t('settingsUpdateSuccess'))
+      // Call success callback
+      const successMessage = t('settingsUpdateSuccess')
+
+      toast.success(successMessage)
+      options?.onSuccess?.(successMessage)
     } catch (error) {
       console.error('Error uploading file:', error)
       const message = error instanceof Error ? error.message : 'An unexpected error occurred'
 
       setErrors([{ message }])
+      toast.error(message)
       options?.onError?.([{ message }])
     } finally {
       setIsUploading(false)

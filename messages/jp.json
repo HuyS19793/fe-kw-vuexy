@@ -127,6 +127,7 @@
   "maximumFileSize": "最大ファイルサイズ",
   "uploadButton": "アップロード",
   "correctFollowingErrors": "以下のエラーを修正してください：",
+  "correctValidationErrorsBeforeUploading": "アップロードする前にすべての検証エラーを修正してください",
   "rowColumnError": "行 {row}、{column}：{message}",
   "fileTooLarge": "ファイルサイズが大きすぎます。最大サイズは5MBです。",
   "invalidFileType": "無効なファイル形式です。CSVまたはExcelファイルをアップロードしてください。",
@@ -149,5 +150,15 @@
   "downloadFailed": "ダウンロードに失敗しました。もう一度お試しください。",
   "Upload": "アップロード",
   "Uploading": "アップロード中",
-  "Cancel": "キャンセル"
+  "Cancel": "キャンセル",
+  "Success": "成功",
+  "uploadFailed": "アップロードに失敗しました。もう一度お試しください。",
+  "invalidFileFormat": "ファイル形式が無効です。ファイルを確認してください。",
+  "authenticationRequired": "認証が必要です。再度ログインしてください。",
+  "validationError": "検証エラー",
+  "invalidFileFormatOrContent": "ファイル形式または内容が無効です",
+  "serverError": "サーバーエラー",
+  "accessDenied": "ファイルをアップロードできません：アクセスが拒否されました",
+  "unknownError": "不明なエラーが発生しました",
+  "internalServerError": "ファイルアップロード中に内部サーバーエラーが発生しました"
 }

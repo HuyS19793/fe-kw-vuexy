@@ -125,6 +125,7 @@
   "maximumFileSize": "Maximum file size",
   "uploadButton": "Upload",
   "correctFollowingErrors": "Please correct the following errors:",
+  "correctValidationErrorsBeforeUploading": "Please correct all validation errors before uploading",
   "rowColumnError": "Row {row}, {column}: {message}",
   "fileTooLarge": "File is too large. Maximum size is 5MB.",
   "invalidFileType": "Invalid file type. Please upload CSV or Excel files.",
@@ -147,5 +148,15 @@
   "downloadFailed": "Download failed. Please try again.",
   "Upload": "Upload",
   "Uploading": "Uploading",
-  "Cancel": "Cancel"
+  "Cancel": "Cancel",
+  "Success": "Success",
+  "uploadFailed": "Upload failed. Please try again.",
+  "invalidFileFormat": "Invalid file format. Please check your file.",
+  "authenticationRequired": "Authentication required. Please login again.",
+  "validationError": "Validation error",
+  "invalidFileFormatOrContent": "Invalid file format or content",
+  "serverError": "Server error",
+  "accessDenied": "Could not upload file: Access Denied",
+  "unknownError": "Unknown error occurred",
+  "internalServerError": "Internal server error during file upload"
 }
